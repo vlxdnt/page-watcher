@@ -16,7 +16,20 @@ def get_page_hash(URL):
     }
     try:
         response = requests.get(URL, headers=headers)
-        response.raise_for_status()
+        
+        # Handling common HTTP errors
+        if response.status_code == 403:
+            print("Access denied (403). The server may be blocking requests from this script.")
+            return None
+        elif response.status_code == 404:
+            print("Page not found (404). The page may have been removed.")
+            return None
+        elif response.status_code == 500:
+            print("Server error (500). The server may be experiencing issues.")
+            return None
+        elif response.status_code != 200:
+            print(f"Unexpected status code: {response.status_code}")
+            return None
 
         # Checks if the content is a webpage or a raw file (CSV, PDF, etc.)
         content_type = response.headers.get('Content-Type', '')
@@ -34,6 +47,12 @@ def get_page_hash(URL):
         else: # Raw hashing for files
             return hashlib.md5(response.content).hexdigest()
         
+    except requests.exceptions.ConnectionError as e:
+        print(f"Connection error: {e}")
+        return None
+    except requests.exceptions.Timeout as e:
+        print(f"Request timed out: {e}")
+        return None
     except Exception as e:
         print(f"Error fetching the page: {e}")
         return None
